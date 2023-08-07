@@ -1,0 +1,79 @@
+# This script will install the ELK stack and configure nginx as a reverse proxy for each service.
+
+# Install ELK stack
+sudo apt-get install elasticsearch logstash kibana
+
+# Configure nginx as a reverse proxy for Elasticsearch
+sudo touch /etc/nginx/sites-available/elasticsearch
+sudo echo "upstream elasticsearch {
+    server localhost:9200;
+}" > /etc/nginx/sites-available/elasticsearch
+sudo echo "server {
+    listen 80;
+    server_name elasticsearch.example.com;
+    location / {
+        proxy_pass http://elasticsearch;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}" >> /etc/nginx/sites-available/elasticsearch
+sudo ln -s /etc/nginx/sites-available/elasticsearch /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo nginx -s reload
+
+# Configure nginx as a reverse proxy for Logstash
+sudo touch /etc/nginx/sites-available/logstash
+sudo echo "upstream logstash {
+    server localhost:5959;
+}" > /etc/nginx/sites-available/logstash
+sudo echo "server {
+    listen 80;
+    server_name logstash.example.com;
+    location / {
+        proxy_pass http://logstash;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}" >> /etc/nginx/sites-available/logstash
+sudo ln -s /etc/nginx/sites-available/logstash /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo nginx -s reload
+
+# Configure nginx as a reverse proxy for Kibana
+sudo touch /etc/nginx/sites-available/kibana
+sudo echo "upstream kibana {
+    server localhost:5601;
+}" > /etc/nginx/sites-available/kibana
+sudo echo "server {
+    listen 80;
+    server_name kibana.example.com;
+    location / {
+        proxy_pass http://kibana;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}" >> /etc/nginx/sites-available/kibana
+sudo ln -s /etc/nginx/sites-available/kibana /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo nginx -s reload
+
+# Prompt user for login and password information
+echo "Please enter your login and password information for connecting to the services through the reverse proxy:"
+read -p "Login: " login
+read -p "Password: " password
+
+# Set the login and password information in the nginx configuration files
+sudo sed -i "s/{{login}}/$login/" /etc/nginx/sites-available/elasticsearch
+sudo sed -i "s/{{password}}/$password/" /etc/nginx/sites-available/elasticsearch
+sudo sed -i "s/{{login}}/$login/" /etc/nginx/sites-available/logstash
+sudo sed -i "s/{{password}}/$password/" /etc/nginx/sites-available/logstash
+sudo sed -i "s/{{login}}/$login/" /etc/nginx/sites-available/kibana
+sudo sed -i "s/{{password}}/$password/" /etc/nginx/sites-available/kibana
+
+# Restart nginx
+sudo nginx -s reload
+
+# The services are now available through the reverse proxy at the following URLs:
+
+# Elasticsearch: https://elasticsearch.example.com
+# Logstash: https://logstash.example.c
